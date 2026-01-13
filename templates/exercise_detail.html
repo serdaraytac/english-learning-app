@@ -26,17 +26,17 @@
         <h2>📤 Ödevini Yükle</h2>
         <p>Yazını bir kağıda yazıp fotoğrafını çekebilir veya Word dosyası olarak yükleyebilirsin.</p>
         
-        <form method="POST" enctype="multipart/form-data" class="upload-form">
+        <form method="POST" enctype="multipart/form-data" class="upload-form" id="uploadForm">
             <div class="file-upload">
                 <input type="file" id="file" name="file" accept=".jpg,.jpeg,.png,.docx,.doc,.pdf" required>
-                <label for="file">
-                    <span class="upload-icon">📎</span>
-                    <span class="upload-text">Dosya seç veya sürükle</span>
-                    <span class="upload-hint">JPG, PNG, Word veya PDF</span>
-                </label>
+                    <label for="file">
+                        <span class="upload-icon">📎</span>
+                        <span class="upload-text">Dosya seç veya sürükle</span>
+                        <span class="upload-hint">JPG, PNG, Word veya PDF</span>
+                    </label>
             </div>
             <div id="file-preview" class="file-preview"></div>
-            <button type="submit" class="btn btn-primary">Gönder ve Değerlendir</button>
+            <button type="submit" class="btn btn-primary" id="submitBtn">Gönder ve Değerlendir</button>
         </form>
     </div>
 
