@@ -18,6 +18,7 @@
             <a href="{{ url_for('admin_dashboard') }}" class="admin-link">Admin</a>
             {% endif %}
             <span class="user-info">{{ session.user_name }} ({{ session.current_level }})</span>
+            <a href="{{ url_for('change_password') }}">Şifre Değiştir</a>
             <a href="{{ url_for('logout') }}" class="logout">Çıkış</a>
         </div>
     </nav>
