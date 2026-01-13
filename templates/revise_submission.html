@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Düzeltme Yükle - English Learning{% endblock %}
+{% block content %}
+<div class="exercise-detail">
+    <a href="{{ url_for('submission_result', submission_id=submission.id) }}" class="back-link">← Değerlendirmeye Dön</a>
+    
+    <div class="exercise-header">
+        <span class="level-badge level-{{ submission.exercises.level }}">{{ submission.exercises.level }}</span>
+        <h1>Düzeltme Yükle</h1>
+        <p class="revision-info">{{ revision_count + 1 }}. deneme</p>
+    </div>
+
+    <div class="instructions-box">
+        <h2>📋 Orijinal Görev</h2>
+        <p>{{ submission.exercises.instructions }}</p>
+    </div>
+
+    {% if submission.evaluations %}
+    <div class="errors-reminder">
+        <h2>🔍 Düzeltmen Gereken Hatalar</h2>
+        {% for err in submission.evaluations[0].errors_json %}
+        <div class="error-item">
+            <div class="error-original">❌ {{ err.error }}</div>
+            <div class="error-hint">💡 {{ err.rule if err.rule else 'İpucu için örneğe bak' }}</div>
+            <div class="error-example">📝 Örnek: {{ err.example if err.example else 'Yukarıdaki açıklamaya göre düzelt' }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="upload-section">
+        <h2>📤 Düzeltilmiş Ödevini Yükle</h2>
+        <p>Hataları düzelterek yeniden yaz ve fotoğrafını çek.</p>
+        
+        <form method="POST" enctype="multipart/form-data" class="upload-form">
+            <div class="file-upload">
+                <input type="file" id="file" name="file" accept=".jpg,.jpeg,.png,.docx,.doc,.pdf" required>
+                <label for="file">
+                    <span class="upload-icon">📎</span>
+                    <span class="upload-text">Dosya seç veya sürükle</span>
+                    <span class="upload-hint">JPG, PNG, Word veya PDF</span>
+                </label>
+            </div>
+            <div id="file-preview" class="file-preview"></div>
+            <button type="submit" class="btn btn-primary">Gönder ve Tekrar Değerlendir</button>
+        </form>
+    </div>
+
+    {% if revision_count >= 2 %}
+    <div class="warning-box">
+        <h3>💡 İpucu</h3>
+        <p>Bu 3. denemen. Eğer aynı hatalar devam ediyorsa, o konuyu ayrıca çalışman faydalı olabilir.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.getElementById('file').addEventListener('change', function(e) {
+    const preview = document.getElementById('file-preview');
+    const file = e.target.files[0];
+    if (file) {
+        preview.innerHTML = '<div class="file-info">✓ ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)</div>';
+    }
+});
+</script>
+{% endblock %}
