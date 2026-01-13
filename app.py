@@ -126,16 +126,31 @@ def dashboard():
 @app.route('/exercises')
 @login_required
 def exercises():
-    level = session.get('current_level', 'A2')
-    # Kullanıcının seviyesine uygun veya bir alt seviye
-    levels = ['A1', 'A2'] if level == 'A2' else ['A2', 'B1'] if level == 'B1' else [level]
-    
-    exercises = supabase.table('exercises')\
-        .select('*')\
-        .eq('type', 'writing')\
-        .eq('is_active', True)\
-        .in_('level', levels)\
-        .execute()
+    if session.get('is_super_admin'):
+        exercises = supabase.table('exercises')\
+            .select('*')\
+            .eq('type', 'writing')\
+            .eq('is_active', True)\
+            .order('level')\
+            .execute()
+    else:
+        level = session.get('current_level', 'A2')
+        level_map = {
+            'A1': ['A1'],
+            'A2': ['A1', 'A2'],
+            'B1': ['A2', 'B1'],
+            'B2': ['B1', 'B2'],
+            'C1': ['B2', 'C1'],
+            'C2': ['C1', 'C2']
+        }
+        levels = level_map.get(level, [level])
+        
+        exercises = supabase.table('exercises')\
+            .select('*')\
+            .eq('type', 'writing')\
+            .eq('is_active', True)\
+            .in_('level', levels)\
+            .execute()
     
     return render_template('exercises.html', exercises=exercises.data)
 
