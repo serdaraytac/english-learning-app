@@ -20,7 +20,7 @@
         <h2>🔍 Düzeltmen Gereken Hatalar</h2>
         {% for err in submission.evaluations[0].errors_json %}
         <div class="error-item">
-            <div class="error-original">❌ {{ err.error }}</div>
+            <div class="error-original">❌ {{ err.error | safe }}</div>
             <div class="error-hint">💡 {{ err.rule if err.rule else 'İpucu için örneğe bak' }}</div>
             <div class="error-example">📝 Örnek: {{ err.example if err.example else 'Yukarıdaki açıklamaya göre düzelt' }}</div>
         </div>
