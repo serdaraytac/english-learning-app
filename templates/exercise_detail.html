@@ -51,12 +51,18 @@
 </div>
 
 <script>
-document.getElementById('file').addEventListener('change', function(e) {
-    const preview = document.getElementById('file-preview');
-    const file = e.target.files[0];
-    if (file) {
-        preview.innerHTML = '<div class="file-info">✓ ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)</div>';
-    }
-});
+    document.getElementById('file').addEventListener('change', function(e) {
+        const preview = document.getElementById('file-preview');
+        const file = e.target.files[0];
+        if (file) {
+            preview.innerHTML = '<div class="file-info">✓ ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)</div>';
+        }
+    });
+
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-small"></span> Yükleniyor ve değerlendiriliyor...';
+    });
 </script>
 {% endblock %}
