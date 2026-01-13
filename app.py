@@ -7,7 +7,9 @@ from functools import wraps
 import anthropic
 import base64
 import json
+import io
 from datetime import datetime
+from docx import Document
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-prod')
@@ -355,13 +357,12 @@ def evaluate_submission(submission_id, file_content, file_type, exercise, previo
         if previous_errors:
             system_prompt += f"""
 
-ÖNCEKİ HATALAR:
+PREVIOUS ERRORS:
 {json.dumps(previous_errors, ensure_ascii=False)}
 
-Bu bir düzeltme denemesidir. Önceki hataların düzeltilip düzeltilmediğini kontrol et.
-- Düzeltilen hatalar için övgü ver
-- Hala devam eden hatalar için farklı bir açıklama ve örnek ver
-- 3. denemede hala aynı hata varsa, o konuyu ayrıca çalışması için kaynak öner
+This is a revision attempt. Check if previous errors are fixed.
+- Praise fixed errors
+- Give different explanation for remaining errors
 """
         
         # Dosya tipine göre içerik hazırla
@@ -392,15 +393,29 @@ Bu bir düzeltme denemesidir. Önceki hataların düzeltilip düzeltilmediğini 
                     ]
                 }]
             )
-        else:
-            # Word/PDF - şimdilik sadece görsel desteği
+        elif file_type in ['docx', 'doc']:
+            # Word dosyasından text çıkar
+            doc = Document(io.BytesIO(file_content))
+            extracted_text = '\n'.join([para.text for para in doc.paragraphs])
+            
             message = claude_client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=2000,
                 system=system_prompt,
                 messages=[{
                     "role": "user",
-                    "content": f"Görev: {exercise['title']}\nTalimat: {exercise['instructions']}\n\nNot: Word/PDF dosyası yüklendi. Lütfen kullanıcıya fotoğraf olarak yüklemesini önerin."
+                    "content": f"Görev: {exercise['title']}\nTalimat: {exercise['instructions']}\nBeklenen kelime sayısı: {exercise['word_count_min']}-{exercise['word_count_max']}\n\nÖğrencinin metni:\n{extracted_text}"
+                }]
+            )
+        else:
+            # PDF - desteklenmiyor
+            message = claude_client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=2000,
+                system=system_prompt,
+                messages=[{
+                    "role": "user",
+                    "content": f"Görev: {exercise['title']}\nTalimat: {exercise['instructions']}\n\nNot: PDF dosyası yüklendi. Lütfen kullanıcıya Word veya fotoğraf olarak yüklemesini önerin."
                 }]
             )
         
@@ -419,7 +434,7 @@ Bu bir düzeltme denemesidir. Önceki hataların düzeltilip düzeltilmediğini 
             eval_data = {
                 "grammar_score": 5, "vocabulary_score": 5, "task_completion_score": 5,
                 "coherence_score": 5, "overall_score": 5, "estimated_level": "A2",
-                "feedback": response_text, "errors": []
+                "feedback": response_text, "errors": [], "transcription": ""
             }
         
         # Evaluation kaydet
@@ -432,7 +447,8 @@ Bu bir düzeltme denemesidir. Önceki hataların düzeltilip düzeltilmediğini 
             'overall_score': eval_data.get('overall_score', 5),
             'estimated_level': eval_data.get('estimated_level', 'A2'),
             'feedback_text': eval_data.get('feedback', ''),
-            'errors_json': eval_data.get('errors', [])
+            'errors_json': eval_data.get('errors', []),
+            'transcription': eval_data.get('transcription', '')
         }).execute()
         
         # Submission durumunu güncelle
