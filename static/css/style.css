@@ -547,3 +547,21 @@ body {
 .errors-reminder .error-item:last-child {
     margin-bottom: 0;
 }
+
+/* Loading spinner for button */
+.spinner-small {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
