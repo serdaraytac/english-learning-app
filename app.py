@@ -55,6 +55,24 @@ def index():
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        name = request.form.get('name')
+        password = request.form.get('password')
+        
+        supabase.table('users').insert({
+            'email': email,
+            'name': name,
+            'password_hash': generate_password_hash(password),
+            'is_super_admin': True,
+            'current_level': 'B1'
+        }).execute()
+        flash('Kayıt başarılı, giriş yapabilirsin.', 'success')
+        return redirect(url_for('login'))
+    return render_template('login.html')
+    
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
