@@ -74,7 +74,7 @@
         <div class="errors-list">
             {% for err in eval.errors_json %}
             <div class="error-item">
-                <div class="error-original">❌ <strong>Hata:</strong> {{ err.error }}</div>
+                <div class="error-original">❌ <strong>Hata:</strong> {{ err.error | safe }}</div>
                 <div class="error-rule">💡 <strong>Kural:</strong> {{ err.rule if err.rule else err.explanation }}</div>
                 <div class="error-example">📝 <strong>Örnek:</strong> {{ err.example if err.example else 'Kuralı uygulayarak düzelt' }}</div>
             </div>
