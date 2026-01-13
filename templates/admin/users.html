@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Kullanıcılar - Admin{% endblock %}
+{% block content %}
+<div class="admin-page">
+    <a href="{{ url_for('admin_dashboard') }}" class="back-link">← Admin Panel</a>
+    <h1>Kullanıcı Yönetimi 👥</h1>
+
+    <div class="add-form">
+        <h2>Yeni Kullanıcı Ekle</h2>
+        <form method="POST">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Ad</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Şifre</label>
+                    <input type="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label>Seviye</label>
+                    <select name="level">
+                        <option value="A1">A1</option>
+                        <option value="A2" selected>A2</option>
+                        <option value="B1">B1</option>
+                        <option value="B2">B2</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Ekle</button>
+        </form>
+    </div>
+
+    <div class="data-table">
+        <h2>Mevcut Kullanıcılar</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Ad</th>
+                    <th>Email</th>
+                    <th>Seviye</th>
+                    <th>Admin</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td><span class="level-badge level-{{ user.current_level }}">{{ user.current_level }}</span></td>
+                    <td>{{ '✓' if user.is_super_admin else '' }}</td>
+                    <td>
+                        {% if not user.is_super_admin %}
+                        <form method="POST" action="{{ url_for('admin_delete_user', user_id=user.id) }}" style="display:inline" onsubmit="return confirm('Silmek istediğine emin misin?')">
+                            <button type="submit" class="btn btn-danger btn-small">Sil</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

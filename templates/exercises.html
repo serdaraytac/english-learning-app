@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Egzersizler - English Learning{% endblock %}
+{% block content %}
+<div class="exercises-page">
+    <h1>Writing Egzersizleri ✍️</h1>
+    <p class="subtitle">Seviyene uygun egzersizlerden birini seç</p>
+
+    {% if exercises %}
+    <div class="exercises-grid">
+        {% for ex in exercises %}
+        <a href="{{ url_for('exercise_detail', exercise_id=ex.id) }}" class="exercise-card">
+            <span class="level-badge level-{{ ex.level }}">{{ ex.level }}</span>
+            <h3>{{ ex.title }}</h3>
+            <p>{{ ex.instructions[:100] }}{% if ex.instructions|length > 100 %}...{% endif %}</p>
+            <div class="exercise-meta">
+                <span>📝 {{ ex.word_count_min }}-{{ ex.word_count_max }} kelime</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">Henüz egzersiz eklenmemiş.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Ayarlar - Admin{% endblock %}
+{% block content %}
+<div class="admin-page">
+    <a href="{{ url_for('admin_dashboard') }}" class="back-link">← Admin Panel</a>
+    <h1>Sistem Ayarları ⚙️</h1>
+
+    <form method="POST" class="settings-form">
+        {% for setting in settings %}
+        <div class="setting-item">
+            <div class="setting-header">
+                <label>{{ setting.key }}</label>
+                <small>{{ setting.description }}</small>
+            </div>
+            <textarea name="setting_{{ setting.key }}" rows="10">{{ setting.value }}</textarea>
+        </div>
+        {% endfor %}
+        
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+    </form>
+
+    <div class="info-box">
+        <h3>💡 Prompt Yazım İpuçları</h3>
+        <ul>
+            <li>Claude'un JSON formatında yanıt vermesini iste</li>
+            <li>Değerlendirme kriterlerini net belirt</li>
+            <li>Türkçe geri bildirim istediğini vurgula</li>
+            <li>Samimi ve motive edici dil kullanmasını söyle</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

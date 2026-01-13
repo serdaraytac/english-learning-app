@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Admin - English Learning{% endblock %}
+{% block content %}
+<div class="admin-dashboard">
+    <h1>Admin Panel 🔧</h1>
+
+    <div class="admin-stats">
+        <div class="stat-card">
+            <div class="stat-value">{{ users|length }}</div>
+            <div class="stat-label">Kullanıcı</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ exercises|length }}</div>
+            <div class="stat-label">Egzersiz</div>
+        </div>
+    </div>
+
+    <div class="admin-nav">
+        <a href="{{ url_for('admin_users') }}" class="admin-card">
+            <span class="icon">👥</span>
+            <h3>Kullanıcılar</h3>
+            <p>Kullanıcı ekle, düzenle, sil</p>
+        </a>
+        <a href="{{ url_for('admin_exercises') }}" class="admin-card">
+            <span class="icon">📝</span>
+            <h3>Egzersizler</h3>
+            <p>Görev havuzunu yönet</p>
+        </a>
+        <a href="{{ url_for('admin_settings') }}" class="admin-card">
+            <span class="icon">⚙️</span>
+            <h3>Ayarlar</h3>
+            <p>Prompt'lar ve sistem ayarları</p>
+        </a>
+    </div>
+</div>
+{% endblock %}

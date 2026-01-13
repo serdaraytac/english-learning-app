@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}English Learning{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% if session.user_id %}
+    <nav class="navbar">
+        <div class="nav-brand">🎓 English Learning</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('exercises') }}">Egzersizler</a>
+            <a href="{{ url_for('my_submissions') }}">Ödevlerim</a>
+            {% if session.is_super_admin %}
+            <a href="{{ url_for('admin_dashboard') }}" class="admin-link">Admin</a>
+            {% endif %}
+            <span class="user-info">{{ session.user_name }} ({{ session.current_level }})</span>
+            <a href="{{ url_for('logout') }}" class="logout">Çıkış</a>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Ödevlerim - English Learning{% endblock %}
+{% block content %}
+<div class="my-submissions">
+    <h1>Ödevlerim 📚</h1>
+
+    {% if submissions %}
+    <div class="submissions-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Egzersiz</th>
+                    <th>Seviye</th>
+                    <th>Durum</th>
+                    <th>Puan</th>
+                    <th>Tarih</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in submissions %}
+                <tr onclick="location.href='{{ url_for('submission_result', submission_id=sub.id) }}'">
+                    <td>{{ sub.exercises.title if sub.exercises else 'Egzersiz' }}</td>
+                    <td><span class="level-badge level-{{ sub.exercises.level if sub.exercises else 'A2' }}">{{ sub.exercises.level if sub.exercises else '?' }}</span></td>
+                    <td>
+                        <span class="status status-{{ sub.status }}">
+                            {% if sub.status == 'evaluated' %}✓ Değerlendirildi
+                            {% elif sub.status == 'pending' %}⏳ Bekliyor
+                            {% else %}❌ Hata{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% if sub.evaluations %}
+                        <strong>{{ sub.evaluations[0].overall_score }}/10</strong>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>{{ sub.created_at[:10] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="empty-state">Henüz ödev yüklemedin. <a href="{{ url_for('exercises') }}">İlk egzersizine başla!</a></p>
+    {% endif %}
+</div>
+{% endblock %}

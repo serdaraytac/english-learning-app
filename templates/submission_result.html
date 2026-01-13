@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Değerlendirme - English Learning{% endblock %}
+{% block content %}
+<div class="result-page">
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Dashboard'a Dön</a>
+
+    {% if submission.status == 'pending' %}
+    <div class="pending-box">
+        <div class="spinner"></div>
+        <h2>Değerlendiriliyor...</h2>
+        <p>Ödevin AI tarafından inceleniyor. Bu sayfa otomatik yenilenecek.</p>
+        <script>setTimeout(() => location.reload(), 5000);</script>
+    </div>
+    
+    {% elif submission.status == 'error' %}
+    <div class="error-box">
+        <h2>❌ Bir Hata Oluştu</h2>
+        <p>Değerlendirme sırasında bir sorun oluştu. Lütfen tekrar dene.</p>
+        <a href="{{ url_for('exercises') }}" class="btn btn-primary">Yeni Egzersiz Seç</a>
+    </div>
+    
+    {% else %}
+    {% set eval = submission.evaluations[0] if submission.evaluations else None %}
+    
+    <div class="result-header">
+        <h1>{{ submission.exercises.title if submission.exercises else 'Değerlendirme' }}</h1>
+        <span class="level-badge level-{{ eval.estimated_level if eval else 'A2' }}">
+            Tahminî Seviye: {{ eval.estimated_level if eval else '?' }}
+        </span>
+    </div>
+
+    {% if eval %}
+    <div class="scores-grid">
+        <div class="score-card">
+            <div class="score-value">{{ eval.grammar_score }}/10</div>
+            <div class="score-label">Dilbilgisi</div>
+            <div class="score-bar"><div style="width: {{ eval.grammar_score * 10 }}%"></div></div>
+        </div>
+        <div class="score-card">
+            <div class="score-value">{{ eval.vocabulary_score }}/10</div>
+            <div class="score-label">Kelime</div>
+            <div class="score-bar"><div style="width: {{ eval.vocabulary_score * 10 }}%"></div></div>
+        </div>
+        <div class="score-card">
+            <div class="score-value">{{ eval.task_completion_score }}/10</div>
+            <div class="score-label">Göreve Uygunluk</div>
+            <div class="score-bar"><div style="width: {{ eval.task_completion_score * 10 }}%"></div></div>
+        </div>
+        <div class="score-card">
+            <div class="score-value">{{ eval.coherence_score }}/10</div>
+            <div class="score-label">Tutarlılık</div>
+            <div class="score-bar"><div style="width: {{ eval.coherence_score * 10 }}%"></div></div>
+        </div>
+    </div>
+
+    <div class="overall-score">
+        <div class="big-score">{{ eval.overall_score }}/10</div>
+        <div class="score-label">Genel Puan</div>
+    </div>
+
+    <div class="feedback-section">
+        <h2>📝 Geri Bildirim</h2>
+        <div class="feedback-text">{{ eval.feedback_text }}</div>
+    </div>
+
+    {% if eval.errors_json %}
+    <div class="errors-section">
+        <h2>🔍 Düzeltmeler</h2>
+        <div class="errors-list">
+            {% for err in eval.errors_json %}
+            <div class="error-item">
+                <div class="error-original">❌ {{ err.error }}</div>
+                <div class="error-correction">✓ {{ err.correction }}</div>
+                <div class="error-explanation">💡 {{ err.explanation }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <div class="actions">
+        <a href="{{ url_for('exercises') }}" class="btn btn-primary">Yeni Egzersiz</a>
+        <a href="{{ url_for('my_submissions') }}" class="btn btn-secondary">Tüm Ödevlerim</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

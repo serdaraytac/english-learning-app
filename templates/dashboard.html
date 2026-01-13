@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - English Learning{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <h1>Hoş geldin, {{ session.user_name }}! 👋</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ session.current_level }}</div>
+            <div class="stat-label">Seviye</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ progress.total_exercises }}</div>
+            <div class="stat-label">Toplam Egzersiz</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ "%.1f"|format(progress.average_score|float) }}</div>
+            <div class="stat-label">Ortalama Puan</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ progress.level_assessments_done }}/3</div>
+            <div class="stat-label">Seviye Tespiti</div>
+        </div>
+    </div>
+
+    {% if progress.level_assessments_done < 3 %}
+    <div class="info-box">
+        💡 <strong>Seviye tespiti için {{ 3 - progress.level_assessments_done }} egzersiz daha tamamla!</strong>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <h2>Son Ödevlerin</h2>
+        {% if submissions %}
+        <div class="submissions-list">
+            {% for sub in submissions %}
+            <a href="{{ url_for('submission_result', submission_id=sub.id) }}" class="submission-card">
+                <div class="submission-title">{{ sub.exercises.title if sub.exercises else 'Egzersiz' }}</div>
+                <div class="submission-meta">
+                    <span class="status status-{{ sub.status }}">
+                        {% if sub.status == 'evaluated' %}✓ Değerlendirildi
+                        {% elif sub.status == 'pending' %}⏳ Bekliyor
+                        {% else %}❌ Hata{% endif %}
+                    </span>
+                    {% if sub.evaluations %}
+                    <span class="score">{{ sub.evaluations[0].overall_score }}/10</span>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-state">Henüz ödev yüklemedin. <a href="{{ url_for('exercises') }}">İlk egzersizine başla!</a></p>
+        {% endif %}
+    </div>
+
+    <a href="{{ url_for('exercises') }}" class="btn btn-primary btn-large">Yeni Egzersiz Başlat</a>
+</div>
+{% endblock %}
