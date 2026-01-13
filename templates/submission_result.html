@@ -24,9 +24,14 @@
     
     <div class="result-header">
         <h1>{{ submission.exercises.title if submission.exercises else 'Değerlendirme' }}</h1>
-        <span class="level-badge level-{{ eval.estimated_level if eval else 'A2' }}">
-            Tahminî Seviye: {{ eval.estimated_level if eval else '?' }}
-        </span>
+        <div class="result-meta">
+            <span class="level-badge level-{{ eval.estimated_level if eval else 'A2' }}">
+                Tahminî Seviye: {{ eval.estimated_level if eval else '?' }}
+            </span>
+            {% if submission.revision_number > 0 %}
+            <span class="revision-badge">{{ submission.revision_number }}. Düzeltme</span>
+            {% endif %}
+        </div>
     </div>
 
     {% if eval %}
@@ -63,24 +68,51 @@
         <div class="feedback-text">{{ eval.feedback_text }}</div>
     </div>
 
-    {% if eval.errors_json %}
+    {% if eval.errors_json and eval.errors_json|length > 0 %}
     <div class="errors-section">
-        <h2>🔍 Düzeltmeler</h2>
+        <h2>🔍 Hatalar ve Öğrenme Fırsatları</h2>
         <div class="errors-list">
             {% for err in eval.errors_json %}
             <div class="error-item">
-                <div class="error-original">❌ {{ err.error }}</div>
-                <div class="error-correction">✓ {{ err.correction }}</div>
-                <div class="error-explanation">💡 {{ err.explanation }}</div>
+                <div class="error-original">❌ <strong>Hata:</strong> {{ err.error }}</div>
+                <div class="error-rule">💡 <strong>Kural:</strong> {{ err.rule if err.rule else err.explanation }}</div>
+                <div class="error-example">📝 <strong>Örnek:</strong> {{ err.example if err.example else 'Kuralı uygulayarak düzelt' }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="revise-cta">
+            <p>Hataları düzeltmek ister misin? Tekrar yazarak öğrenme pekişir!</p>
+            <a href="{{ url_for('revise_submission', submission_id=submission.id) }}" class="btn btn-primary btn-large">
+                ✍️ Düzelterek Tekrar Yükle
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="success-section">
+        <h2>🎉 Harika!</h2>
+        <p>Önemli bir hata bulunamadı. Yeni bir egzersizle devam edebilirsin!</p>
+    </div>
+    {% endif %}
+    
+    {% if eval.study_recommendations %}
+    <div class="study-section">
+        <h2>📚 Çalışma Önerileri</h2>
+        <div class="study-list">
+            {% for rec in eval.study_recommendations %}
+            <div class="study-item">
+                <span class="study-topic">{{ rec.topic }}</span>
+                <span class="study-resource">{{ rec.resource }}</span>
             </div>
             {% endfor %}
         </div>
     </div>
     {% endif %}
+    
     {% endif %}
 
     <div class="actions">
-        <a href="{{ url_for('exercises') }}" class="btn btn-primary">Yeni Egzersiz</a>
+        <a href="{{ url_for('exercises') }}" class="btn btn-secondary">Yeni Egzersiz</a>
         <a href="{{ url_for('my_submissions') }}" class="btn btn-secondary">Tüm Ödevlerim</a>
     </div>
     {% endif %}
