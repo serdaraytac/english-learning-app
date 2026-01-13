@@ -71,7 +71,7 @@ def register():
         flash('Kayıt başarılı, giriş yapabilirsin.', 'success')
         return redirect(url_for('login'))
     return render_template('login.html')
-    
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -95,6 +95,26 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current = request.form.get('current_password')
+        new = request.form.get('new_password')
+        
+        user = supabase.table('users').select('*').eq('id', session['user_id']).single().execute()
+        
+        if check_password_hash(user.data['password_hash'], current):
+            supabase.table('users').update({
+                'password_hash': generate_password_hash(new)
+            }).eq('id', session['user_id']).execute()
+            flash('Şifre değiştirildi.', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Mevcut şifre hatalı.', 'error')
+    
+    return render_template('change_password.html')
 
 # ============ USER ROUTES ============
 
@@ -123,30 +143,11 @@ def dashboard():
                          submissions=submissions.data,
                          progress=progress_data)
 
-@app.route('/change-password', methods=['GET', 'POST'])
-@login_required
-def change_password():
-    if request.method == 'POST':
-        current = request.form.get('current_password')
-        new = request.form.get('new_password')
-        
-        user = supabase.table('users').select('*').eq('id', session['user_id']).single().execute()
-        
-        if check_password_hash(user.data['password_hash'], current):
-            supabase.table('users').update({
-                'password_hash': generate_password_hash(new)
-            }).eq('id', session['user_id']).execute()
-            flash('Şifre değiştirildi.', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Mevcut şifre hatalı.', 'error')
-    
-    return render_template('change_password.html')
-    
 @app.route('/exercises')
 @login_required
 def exercises():
     if session.get('is_super_admin'):
+        # Admin tüm egzersizleri görür
         exercises = supabase.table('exercises')\
             .select('*')\
             .eq('type', 'writing')\
@@ -154,6 +155,7 @@ def exercises():
             .order('level')\
             .execute()
     else:
+        # Normal kullanıcı kendi seviyesine göre görür
         level = session.get('current_level', 'A2')
         level_map = {
             'A1': ['A1'],
@@ -211,11 +213,12 @@ def exercise_detail(exercise_id):
                 'exercise_id': exercise_id,
                 'file_url': file_url,
                 'file_type': file_ext,
-                'status': 'pending'
+                'status': 'pending',
+                'revision_number': 0
             }).execute()
             
             # AI değerlendirmesi başlat
-            evaluate_submission(submission.data[0]['id'], file_content, file_ext, exercise.data)
+            evaluate_submission(submission.data[0]['id'], file_content, file_ext, exercise.data, None)
             
             flash('Ödeviniz yüklendi ve değerlendiriliyor!', 'success')
             return redirect(url_for('submission_result', submission_id=submission.data[0]['id']))
@@ -238,7 +241,90 @@ def submission_result(submission_id):
         flash('Sonuç bulunamadı.', 'error')
         return redirect(url_for('dashboard'))
     
-    return render_template('submission_result.html', submission=submission.data)
+    # Önceki revision'ları al
+    previous_revisions = []
+    if submission.data.get('parent_id'):
+        previous_revisions = supabase.table('submissions')\
+            .select('*, evaluations(*)')\
+            .eq('id', submission.data['parent_id'])\
+            .execute().data
+    
+    return render_template('submission_result.html', 
+                         submission=submission.data,
+                         previous_revisions=previous_revisions)
+
+@app.route('/submission/<submission_id>/revise', methods=['GET', 'POST'])
+@login_required
+def revise_submission(submission_id):
+    # Orijinal submission'ı al
+    original = supabase.table('submissions')\
+        .select('*, evaluations(*), exercises(*)')\
+        .eq('id', submission_id)\
+        .eq('user_id', session['user_id'])\
+        .single()\
+        .execute()
+    
+    if not original.data:
+        flash('Ödev bulunamadı.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Kaç revision yapılmış kontrol et
+    revision_count = original.data.get('revision_number', 0)
+    
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('Dosya seçilmedi.', 'error')
+            return redirect(request.url)
+        
+        file = request.files['file']
+        if file.filename == '':
+            flash('Dosya seçilmedi.', 'error')
+            return redirect(request.url)
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            storage_path = f"{session['user_id']}/{timestamp}_{filename}"
+            
+            file_content = file.read()
+            supabase.storage.from_('submissions').upload(storage_path, file_content)
+            
+            file_url = supabase.storage.from_('submissions').get_public_url(storage_path)
+            file_ext = filename.rsplit('.', 1)[1].lower()
+            
+            # Yeni submission (revision) oluştur
+            new_submission = supabase.table('submissions').insert({
+                'user_id': session['user_id'],
+                'exercise_id': original.data['exercise_id'],
+                'file_url': file_url,
+                'file_type': file_ext,
+                'status': 'pending',
+                'parent_id': submission_id,
+                'revision_number': revision_count + 1
+            }).execute()
+            
+            # Önceki hataları al
+            previous_errors = None
+            if original.data.get('evaluations') and len(original.data['evaluations']) > 0:
+                previous_errors = original.data['evaluations'][0].get('errors_json')
+            
+            # AI değerlendirmesi (karşılaştırmalı)
+            evaluate_submission(
+                new_submission.data[0]['id'], 
+                file_content, 
+                file_ext, 
+                original.data['exercises'],
+                previous_errors
+            )
+            
+            flash('Düzeltmeniz yüklendi ve değerlendiriliyor!', 'success')
+            return redirect(url_for('submission_result', submission_id=new_submission.data[0]['id']))
+        
+        flash('Geçersiz dosya formatı.', 'error')
+    
+    return render_template('revise_submission.html', 
+                         submission=original.data,
+                         revision_count=revision_count)
 
 @app.route('/my-submissions')
 @login_required
@@ -253,7 +339,7 @@ def my_submissions():
 
 # ============ AI EVALUATION ============
 
-def evaluate_submission(submission_id, file_content, file_type, exercise):
+def evaluate_submission(submission_id, file_content, file_type, exercise, previous_errors=None):
     """Claude API ile değerlendirme yap"""
     try:
         # Prompt'u DB'den al
@@ -264,6 +350,19 @@ def evaluate_submission(submission_id, file_content, file_type, exercise):
             .execute()
         
         system_prompt = prompt_result.data['value'] if prompt_result.data else "Değerlendir."
+        
+        # Revision ise karşılaştırma prompt'u ekle
+        if previous_errors:
+            system_prompt += f"""
+
+ÖNCEKİ HATALAR:
+{json.dumps(previous_errors, ensure_ascii=False)}
+
+Bu bir düzeltme denemesidir. Önceki hataların düzeltilip düzeltilmediğini kontrol et.
+- Düzeltilen hatalar için övgü ver
+- Hala devam eden hatalar için farklı bir açıklama ve örnek ver
+- 3. denemede hala aynı hata varsa, o konuyu ayrıca çalışması için kaynak öner
+"""
         
         # Dosya tipine göre içerik hazırla
         if file_type in ['jpg', 'jpeg', 'png']:
@@ -294,8 +393,7 @@ def evaluate_submission(submission_id, file_content, file_type, exercise):
                 }]
             )
         else:
-            # Word/PDF - text çıkar (basit yaklaşım, ileride geliştirilebilir)
-            # Şimdilik sadece görsel desteği
+            # Word/PDF - şimdilik sadece görsel desteği
             message = claude_client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=2000,
@@ -352,10 +450,11 @@ def update_user_progress(submission_id):
     submission = supabase.table('submissions').select('user_id').eq('id', submission_id).single().execute()
     user_id = submission.data['user_id']
     
-    # Tüm evaluations
+    # Tüm evaluations (sadece parent olmayan, yani orijinal submission'lar)
     evals = supabase.table('evaluations')\
-        .select('overall_score, submissions!inner(user_id)')\
+        .select('overall_score, submissions!inner(user_id, parent_id)')\
         .eq('submissions.user_id', user_id)\
+        .is_('submissions.parent_id', 'null')\
         .execute()
     
     total = len(evals.data)
