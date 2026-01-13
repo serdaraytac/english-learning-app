@@ -123,6 +123,26 @@ def dashboard():
                          submissions=submissions.data,
                          progress=progress_data)
 
+@app.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current = request.form.get('current_password')
+        new = request.form.get('new_password')
+        
+        user = supabase.table('users').select('*').eq('id', session['user_id']).single().execute()
+        
+        if check_password_hash(user.data['password_hash'], current):
+            supabase.table('users').update({
+                'password_hash': generate_password_hash(new)
+            }).eq('id', session['user_id']).execute()
+            flash('Şifre değiştirildi.', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Mevcut şifre hatalı.', 'error')
+    
+    return render_template('change_password.html')
+    
 @app.route('/exercises')
 @login_required
 def exercises():
