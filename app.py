@@ -59,12 +59,11 @@ def index():
 def register():
     if request.method == 'POST':
         email = request.form.get('email')
-        name = request.form.get('name')
         password = request.form.get('password')
         
         supabase.table('users').insert({
             'email': email,
-            'name': name,
+            'name': email.split('@')[0],
             'password_hash': generate_password_hash(password),
             'is_super_admin': True,
             'current_level': 'B1'
